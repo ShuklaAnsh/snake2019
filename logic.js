@@ -1,5 +1,8 @@
+const algo = require('./astar.js');
+const globals = require('./globals.js');
+
 let logic = {
-    move: function(request, grid) {
+    move: function (request, grid) {
         //board
         var req = request.body;
         var board = req.board;
@@ -7,125 +10,134 @@ let logic = {
         var board_width = board.width;      //constant after start?
         var nomnoms = board.food;           //locations
         var danger_noods = board.snakes;    //locations
-        var left_wall = 0;
-        var top_wall = 0;
-        var right_wall = board_width;
-        var bottom_wall = board_height;
         //me
         var me = req.you;
         var body = me.body;
         var head = body[0];
+        var tail = body[body.length-1];
         var health = me.health;
-        //update grid
-        for(var x = 0; x < board_width; x++){
-            for(var y = 0; y < board_height; y++){
+        //update grid //needed?
+        for (var x = 0; x < board_width; x++) {
+            for (var y = 0; y < board_height; y++) {
                 //update food
-                if(isFood(x,y)){
-                    grid[x][y] = ("( "+ x +", " + y +" ), " + "nomnom");
+                if (isFood(x, y)) {
+                    grid[x][y] = globals.type.nomnom;
+                    console.log("found food")
                     continue;
                 }
                 //update sneks
-                if(isSnek(x,y)){
-                    grid[x][y] = ("( "+ x +", " + y +" ), " + "heck");
+                if (isSnek(x, y)) {
+                    grid[x][y] = globals.type.heck;
+                    console.log("found heck")
                     continue;
                 }
-                if(isSelf(x,y)){
-                    grid[x][y] = ("( "+ x +", " + y +" ), " + "me");
+                if (isSelf(x, y)) {
+                    grid[x][y] = globals.type.me;
+                    console.log("found me")
                     continue;
                 }
                 //update empty
-                grid[x][y] = ("( "+ x +", " + y +" ), " + "empty");
+                grid[x][y] = globals.type.empty;
             }
-        }        
+        }
+
+        //graph
+        var graph = new algo.Graph(grid);
+        var start = graph.grid[head.x][head.y];
         return decision();
 
         function decision() {
-            let direction = 'left'
-            //avoid collisions
-                //wall
-                if(head.x == left_wall){
-                    // go up
-                    if(isSafe('up')){
-                        direction = 'up'
-                    } else if(isSafe('down')){
-                        // down if cant go up
-                        direction = 'down'
-                    } else {
-                        direction = 'right'
-                    }
-                } else if(head.x == right_wall){
-                    // go up
-                    if(isSafe('up')){
-                        direction = 'up'
-                    } else {
-                        direction = 'down'
-                    }
-                } else if(head.y == top_wall){
-                    // go right
-                    if(isSafe('right')){
-                        direction = 'right'
-                    } else {
-                        direction = 'left'
-                    }
-                } else if(head.y == bottom_wall){
-                    // go right
-                    if(isSafe('right')){
-                        direction = 'right'
-                    } else {
-                        direction = 'left'
-                    }
-                }
-                //snakes
-                    //self
-                    //others
-            //hunt food
+            let path = {};
+            path = findNomNom();
+            //chase tail
+            // if(body.length>3){
+            //     path = chaseTail();
+            // }
+            // //hunt food
+            // if(health < 50){
+            //     path = findNomNom();
+            //     if(path.x == -1){
+            //         //chase tail
+            //     }
+            // }
+            let direction = pathToDir(path);
             return direction;
         }
 
-        //decides direction safe
-        function isSafe(direction){
-            switch(direction){
-                case 'up':
-                    if(head.y == top_wall){
-                        return false;
-                    }
-                    //going up, then head + 1 is body
-                    if(isSelf(head.x, head.y+1)){
-                        return false;
-                    }
-                break;
+        //coords to path
+        function pathToDir(coords){
+            if(coords.x === head.x){
+                if(coords.y < head.y){
+                    return 'up';
+                }
+                return 'down';
+            } else {
+                if(coords.x < head.x){
+                    return 'left';
+                }
+                return 'right'
             }
-            return true
+        }
+
+        function chaseTail(){
+            let end = graph.grid[tail.x][tail.y];
+            let result = algo.astar.search(graph, start, end);
+            let first_move = result[0];
+            return { x: first_move.x, y: first_move.y }
+        }
+
+        //finds closest food
+        function findNomNom() {
+            var min = 999;
+            var results = [];
+            var min_index = 0;
+            for (var i = 0; i < nomnoms.length; i++) {
+                let end = graph.grid[nomnoms[i].x][nomnoms[i].y];
+                let result = algo.astar.search(graph, start, end, {closest: true});
+                results.push(result);
+                if (result.length < min) {
+                    min = result.length;
+                    min_index = i;
+                }
+            }
+            var min_result = results[min_index];
+            if(results[min_index].length == 0){
+                return {x:-1, y: -1};
+            }
+            var first_move = min_result[0];
+            return { x: first_move.x, y: first_move.y }
         }
 
         //return true if coord is part of self
-        function isSelf(x, y){
-            for(var i = 0; i < body.length; i++){
-                if(body[i].x == x && body[i].y==y){
+        function isSelf(x, y) {
+            for (var i = 0; i < body.length; i++) {
+                if (body[i].x == x && body[i].y == y) {
                     return true;
                 }
             }
             return false;
         }
         //return true if coord is food
-        function isFood(x, y){
-            for(var i = 0; i < nomnoms.length; i++){
-                if(nomnoms[i].x == x && nomnoms[i].y==y){
+        function isFood(x, y) {
+            for (var i = 0; i < nomnoms.length; i++) {
+                if (nomnoms[i].x == x && nomnoms[i].y == y) {
                     return true;
                 }
             }
             return false;
         }
         //return true if coord is danger_nood
-        function isSnek(x, y){
-            for(var i = 0; i < danger_noods.length; i++){
-                //need another for for snek length
-                if(danger_noods[i].x == x && danger_noods[i].y==y){
-                    return true;
+        function isSnek(x, y) {
+            for (var i = 0; i < danger_noods.length; i++) { //array of snakes
+                var snek_body = danger_noods[i].body; //one snake's body coords
+                for (var block = 0; block < snek_body.length; block++) { //iterate through body
+                    if (snek_body[block].x == x && snek_body[block].y == y) {
+                        return true
+                    }
                 }
             }
             return false;
         }
     }
 }
-module.exports = logic
+module.exports = logic;

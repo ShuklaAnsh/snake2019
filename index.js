@@ -9,6 +9,7 @@ const {
   poweredByHandler
 } = require('./handlers.js')
 const logic = require('./logic.js');
+const globals = require('./globals.js');
 
 // For deployment to Heroku, the port needs to be set using ENV, so
 // we check for the port number in process.env
@@ -31,15 +32,12 @@ app.post('/start', (request, response) => {
   var board = req.board;
   var board_height = board.height;
   var board_width = board.width;
-  for(var x = 0; x < board_width; x++){
-      grid.push([])
-      for(var y = 0; y < board_height; y++){
-        grid[x].push("( "+ x +", " + y +" ), " + "empty")
-      }
+  for (var x = 0; x < board_width; x++) {
+    grid.push([])
+    for (var y = 0; y < board_height; y++) {
+      grid[x].push(globals.type.empty)
+    }
   }
-
-  console.log(grid.length) //why 30
-  console.log(grid[0].length) //why 30
   // Response data
   const data = {
     color: '#B3B3B3',
@@ -52,7 +50,7 @@ app.post('/start', (request, response) => {
 // Handle POST request to '/move'
 app.post('/move', (request, response) => {
   // NOTE: Do something here to generate your move
- 
+
   const data = {
     move: logic.move(request, grid), // one of: ['up','down','left','right']
   }
