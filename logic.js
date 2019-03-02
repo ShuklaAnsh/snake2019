@@ -14,7 +14,7 @@ let logic = {
         var me = req.you;
         var body = me.body;
         var head = body[0];
-        var tail = body[body.length-1];
+        var tail = body[body.length - 1];
         var health = me.health;
         //update grid //needed?
         for (var x = 0; x < board_width; x++) {
@@ -22,25 +22,26 @@ let logic = {
                 //update food
                 if (isFood(x, y)) {
                     grid[x][y] = globals.type.nomnom;
-                    console.log("found food")
+                    // console.log("found food")
                     continue;
                 }
                 //update sneks
                 if (isSnek(x, y)) {
                     grid[x][y] = globals.type.heck;
-                    console.log("found heck")
+                    // console.log("found heck")
                     continue;
                 }
                 if (isSelf(x, y)) {
                     grid[x][y] = globals.type.me;
-                    console.log("found me")
+                    // console.log("found me")
                     continue;
                 }
                 //update empty
                 grid[x][y] = globals.type.empty;
             }
         }
-
+        //tail = okay 
+        grid[tail.x][tail.y] = globals.type.empty;
         //graph
         var graph = new algo.Graph(grid);
         var start = graph.grid[head.x][head.y];
@@ -48,41 +49,45 @@ let logic = {
 
         function decision() {
             let path = {};
-            path = findNomNom();
-            //chase tail
-            // if(body.length>3){
-            //     path = chaseTail();
-            // }
-            // //hunt food
-            // if(health < 50){
-            //     path = findNomNom();
-            //     if(path.x == -1){
-            //         //chase tail
-            //     }
-            // }
+            if(body.length < 3){
+                path = findNomNom();
+            } else if(body.length >= 3){
+                path = chaseTail();
+            }
+            
+            if (health <= 50) {
+                path = findNomNom();
+                if (path.x == -1) {
+                    //chase tail
+                    // path = chaseTail();
+                }
+            }
             let direction = pathToDir(path);
             return direction;
         }
 
         //coords to path
-        function pathToDir(coords){
-            if(coords.x === head.x){
-                if(coords.y < head.y){
+        function pathToDir(coords) {
+            if (coords.x === head.x) {
+                if (coords.y < head.y) {
                     return 'up';
                 }
                 return 'down';
             } else {
-                if(coords.x < head.x){
+                if (coords.x < head.x) {
                     return 'left';
                 }
                 return 'right'
             }
         }
 
-        function chaseTail(){
+        function chaseTail() {
             let end = graph.grid[tail.x][tail.y];
-            let result = algo.astar.search(graph, start, end);
+            let result = algo.astar.search(graph, start, end, {closest:true});
             let first_move = result[0];
+            if(body.length<=3){
+                return findNomNom();
+            }
             return { x: first_move.x, y: first_move.y }
         }
 
@@ -93,7 +98,7 @@ let logic = {
             var min_index = 0;
             for (var i = 0; i < nomnoms.length; i++) {
                 let end = graph.grid[nomnoms[i].x][nomnoms[i].y];
-                let result = algo.astar.search(graph, start, end, {closest: true});
+                let result = algo.astar.search(graph, start, end);
                 results.push(result);
                 if (result.length < min) {
                     min = result.length;
@@ -101,8 +106,8 @@ let logic = {
                 }
             }
             var min_result = results[min_index];
-            if(results[min_index].length == 0){
-                return {x:-1, y: -1};
+            if (results[min_index].length == 0) {
+                return { x: -1, y: -1 };
             }
             var first_move = min_result[0];
             return { x: first_move.x, y: first_move.y }

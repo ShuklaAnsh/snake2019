@@ -1,7 +1,7 @@
 const type = {
     heck: 0,
     me: 0,
-    empty: 2,
+    empty: 1,
     nomnom: 1
 };
 

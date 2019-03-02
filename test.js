@@ -15,6 +15,8 @@ var body = [
     }
 ];
 var head = body[0];
+var tail = body[body.length-1];
+console.log(tail)
 var board_width = 15;
 var board_height = 17;
 var nomnoms = [{ x: 4, y: 4 }, { x: 1, y: 4 }, {x:3, y:0}];
