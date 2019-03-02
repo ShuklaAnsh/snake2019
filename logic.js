@@ -27,48 +27,64 @@ let logic = {
                 }
                 //update sneks
                 if (isSnek(x, y)) {
-                    grid[x][y] = globals.type.heck;
+                    grid[x][y] = 0;
                     // console.log("found heck")
                     continue;
                 }
                 if (isSelf(x, y)) {
-                    grid[x][y] = globals.type.me;
+                    grid[x][y] = 0;
                     // console.log("found me")
                     continue;
                 }
-                //update empty
-                grid[x][y] = globals.type.empty;
+                else {
+                    //update empty
+                    grid[x][y] = globals.type.empty;
+                }
             }
         }
         //tail = okay 
-        grid[tail.x][tail.y] = globals.type.empty;
+        // grid[tail.x][tail.y] = globals.type.empty;
         //graph
-        var graph = new algo.Graph(grid);
+        var graph = {};
+        graph = new algo.Graph(grid);
         var start = graph.grid[head.x][head.y];
         return decision();
 
         function decision() {
             let path = {};
-            if(body.length < 3){
-                path = findNomNom();
-            } else if(body.length >= 3){
-                path = chaseTail();
-            }
-            
-            if (health <= 50) {
-                path = findNomNom();
-                if (path.x == -1) {
-                    //chase tail
-                    // path = chaseTail();
-                }
+            if(body.length < (board.width-3)){
+                path = stageOne();
+            } else {
+                path = stageTwo();
             }
             let direction = pathToDir(path);
             return direction;
         }
 
+        function stageTwo(){
+            let path = {};
+            if(health < 50){
+                path = findNomNom();
+            } else {
+                path = chaseTail();
+            }
+            return path;
+        }
+
+        function stageOne(){
+            let path = {};
+            path = findNomNom();
+            return path;
+        }
+
+        function stageTest(){
+            let path = {};
+            path = findNomNom();
+            return path;
+        }
         //coords to path
         function pathToDir(coords) {
-            if (coords.x === head.x) {
+            if (coords.x == head.x) {
                 if (coords.y < head.y) {
                     return 'up';
                 }
@@ -79,6 +95,7 @@ let logic = {
                 }
                 return 'right'
             }
+
         }
 
         function chaseTail() {
@@ -107,7 +124,7 @@ let logic = {
             }
             var min_result = results[min_index];
             if (results[min_index].length == 0) {
-                return { x: -1, y: -1 };
+                return chaseTail();
             }
             var first_move = min_result[0];
             return { x: first_move.x, y: first_move.y }

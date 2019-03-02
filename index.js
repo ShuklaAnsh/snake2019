@@ -40,7 +40,7 @@ app.post('/start', (request, response) => {
   }
   // Response data
   const data = {
-    color: 'pink',
+    color: '#B2B2B2',
     headType: "bendr",
     tailType: "fat-rattle"
   }
